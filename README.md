@@ -3,7 +3,7 @@
 Schema-first extraction + classification + structured JSON for support ticket routing.
 
 ## Why this demo
-- Deterministic, structured output (not free-form text)
+- Deterministic, structured output and real repeatable use case
 - Works locally (privacy / no API dependency)
 - Great for entity extraction + routing tasks
 
@@ -35,6 +35,3 @@ npm run dev
 - Next.js: http://localhost:3000
 - Python API: http://127.0.0.1:8000/health
 
-## Notes
-- First run will download the model weights (Hugging Face).
-- If you want stricter entity extraction, increase threshold (e.g., 0.75+).

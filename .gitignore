@@ -1,0 +1,7 @@
+node_modules
+.next
+.env*
+python/.venv
+python/.python-version
+python/__pycache__
+.DS_Store

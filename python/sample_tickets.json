@@ -1,0 +1,14 @@
+[
+  {
+    "preset": "saas_support",
+    "text": "We see ERROR_CODE=KAFKA_403 when publishing from AWS us-west-2. Started after enabling PrivateLink yesterday. Prod only. Enterprise tier."
+  },
+  {
+    "preset": "auth_incident",
+    "text": "SSO login broken. Okta shows success but app returns 500 for all users. Prod us-east-1. Urgent."
+  },
+  {
+    "preset": "billing",
+    "text": "Billed twice for Invoice INV-19383 ($4,500 USD) on Pro plan. Please refund duplicate charge."
+  }
+]

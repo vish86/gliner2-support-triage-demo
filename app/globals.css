@@ -110,3 +110,17 @@ pre {
   white-space: pre-wrap;
   font-family: inherit;
 }
+
+.metrics-box {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: #0b1220;
+  border: 1px solid #23304a;
+  border-radius: 10px;
+}
+
+.cost-blurb {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 12px;
+}

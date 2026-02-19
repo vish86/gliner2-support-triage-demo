@@ -18,6 +18,10 @@ extractor: Optional[GLiNER2] = None
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 
+# Memory: last N triage results for "similar ticket" context in draft
+MEMORY_MAX = 20
+_triage_memory: List[Dict[str, Any]] = []
+
 
 class AnalyzeRequest(BaseModel):
     text: str = Field(min_length=1)
@@ -63,6 +67,20 @@ def health() -> Dict[str, str]:
     return {"status": "ok", "model": MODEL_ID}
 
 
+def _find_similar_ticket(current_ticket: str, routing: Dict[str, Any]) -> Optional[str]:
+    """Return snippet of a similar past ticket (same queue), or None."""
+    queue = (routing or {}).get("next_queue") or ""
+    current_strip = (current_ticket or "").strip()[:200]
+    for entry in reversed(_triage_memory):
+        if (entry.get("ticket") or "").strip()[:200] == current_strip:
+            continue
+        if (entry.get("routing") or {}).get("next_queue") == queue:
+            t = (entry.get("ticket") or "")[:500]
+            if t:
+                return t
+    return None
+
+
 def _call_llm_draft(ticket: str, triage: Dict[str, Any]) -> tuple[str, int, int, float]:
     """Call OpenAI to generate a short draft reply. Returns (draft, tokens_in, tokens_out, latency_ms)."""
     if not OPENAI_API_KEY:
@@ -76,6 +94,10 @@ def _call_llm_draft(ticket: str, triage: Dict[str, Any]) -> tuple[str, int, int,
     ticket_fields = triage.get("ticket_fields") or {}
     severity = triage.get("severity") or {}
     intent = triage.get("intent") or {}
+    similar_snippet = _find_similar_ticket(ticket, routing)
+    similar_block = ""
+    if similar_snippet:
+        similar_block = "\n\nSimilar past ticket (for context only):\n---\n" + similar_snippet + "\n---"
     prompt = f"""You are a support agent. Using the triage below and the customer ticket, write a short professional draft reply (2-4 sentences). Be empathetic and action-oriented.
 
 Triage:
@@ -83,6 +105,7 @@ Triage:
 - Severity: {severity}
 - Intent: {intent}
 - Extracted fields: {json.dumps(ticket_fields, default=str)}
+{similar_block}
 
 Customer ticket:
 ---
@@ -160,6 +183,16 @@ def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
     intent_val = next(iter(itn.values())) if isinstance(itn, dict) and itn else ""
 
     routing = _route(str(severity_val), str(intent_val))
+
+    # Memory: append triage for "similar ticket" use in draft
+    global _triage_memory
+    _triage_memory.append({
+        "ticket": text,
+        "routing": routing,
+        "intent": str(intent_val),
+        "severity": str(severity_val),
+    })
+    _triage_memory = _triage_memory[-MEMORY_MAX:]
 
     return AnalyzeResponse(
         preset=req.preset,

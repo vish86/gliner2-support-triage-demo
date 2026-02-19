@@ -179,9 +179,29 @@ export default function Page() {
           {draftResult && (
             <div style={{ marginTop: 12 }}>
               <pre className="draft-pre">{draftResult.draft}</pre>
-              <p className="small" style={{ marginTop: 8 }}>
-                LLM: {draftResult.tokens_in} in / {draftResult.tokens_out} out tokens, {draftResult.latency_ms.toFixed(0)} ms
-              </p>
+              <div className="metrics-box">
+                <p className="small" style={{ marginTop: 8, marginBottom: 4 }}>
+                  LLM: {draftResult.tokens_in} in / {draftResult.tokens_out} out tokens, {draftResult.latency_ms.toFixed(0)} ms
+                </p>
+                {out?.timings_ms && (
+                  <p className="small" style={{ marginBottom: 6 }}>
+                    GLiNER: {out.timings_ms.total.toFixed(0)} ms total (local, no API cost)
+                  </p>
+                )}
+                <p className="small cost-blurb">
+                  {(() => {
+                    const inPrice = 0.15 / 1e6, outPrice = 0.6 / 1e6;
+                    const hybridPer1k = (draftResult.tokens_in * inPrice + draftResult.tokens_out * outPrice) * 1000;
+                    const estAllLlmIn = Math.ceil(text.length / 4) * 2.5;
+                    const estAllLlmOut = 150;
+                    const allLlmPer1k = (estAllLlmIn * inPrice + estAllLlmOut * outPrice) * 1000;
+                    const pct = allLlmPer1k > 0 ? Math.round((1 - hybridPer1k / allLlmPer1k) * 100) : 0;
+                    return (
+                      <>Est. cost: ${hybridPer1k.toFixed(2)} per 1k tickets (hybrid) vs ~${allLlmPer1k.toFixed(2)} (all-LLM). Cheaper by ~{pct}%.</>
+                    );
+                  })()}
+                </p>
+              </div>
             </div>
           )}
         </div>

@@ -41,6 +41,8 @@ After triage, use **Draft reply** to generate a short agent reply via an LLM (Op
 
 - Set `OPENAI_API_KEY` in the environment when running the Python server. Optional: `OPENAI_MODEL` (default: `gpt-4o-mini`).
 - Without the key, triage still works; the draft button returns a 503 with a clear message.
+- **Memory**: The backend keeps the last 20 triage results. When you request a draft, it may include one similar past ticket (same route) in the LLM context for consistency.
+- **Metrics**: The UI shows GLiNER latency, LLM tokens and latency, and an estimated cost comparison (hybrid vs all-LLM per 1k tickets).
 
 ## Notes
 - First run will download the model weights (Hugging Face).

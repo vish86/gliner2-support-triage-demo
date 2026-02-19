@@ -25,6 +25,14 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [out, setOut] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [draftResult, setDraftResult] = useState<{
+    draft: string;
+    tokens_in: number;
+    tokens_out: number;
+    latency_ms: number;
+  } | null>(null);
+  const [draftErr, setDraftErr] = useState<string | null>(null);
 
   const sampleOptions = useMemo(() => SAMPLES[preset], [preset]);
 
@@ -48,6 +56,27 @@ export default function Page() {
       setErr(e?.message || "Unknown error");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function requestDraft() {
+    if (!out || !text.trim()) return;
+    setDraftLoading(true);
+    setDraftErr(null);
+    setDraftResult(null);
+    try {
+      const resp = await fetch("/api/draft", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text: text.trim(), triage: out }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data?.detail || "Draft request failed");
+      setDraftResult(data);
+    } catch (e: any) {
+      setDraftErr(e?.message || "Unknown error");
+    } finally {
+      setDraftLoading(false);
     }
   }
 
@@ -133,6 +162,30 @@ export default function Page() {
           </p>
         </div>
       </div>
+
+      {out && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <label>Draft reply (LLM)</label>
+          <button
+            type="button"
+            onClick={requestDraft}
+            disabled={draftLoading}
+          >
+            {draftLoading ? "Generating draft…" : "Draft reply"}
+          </button>
+          {draftErr && (
+            <p style={{ color: "#ff9aa2", marginTop: 10 }}>{draftErr}</p>
+          )}
+          {draftResult && (
+            <div style={{ marginTop: 12 }}>
+              <pre className="draft-pre">{draftResult.draft}</pre>
+              <p className="small" style={{ marginTop: 8 }}>
+                LLM: {draftResult.tokens_in} in / {draftResult.tokens_out} out tokens, {draftResult.latency_ms.toFixed(0)} ms
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       <footer className="powered-by">
         <a href="https://fastino.ai" target="_blank" rel="noopener noreferrer">

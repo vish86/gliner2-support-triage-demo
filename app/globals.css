@@ -105,3 +105,8 @@ pre {
   border-color: #3b4866;
   background: #111827;
 }
+
+.draft-pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+}

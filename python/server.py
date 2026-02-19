@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import os
+import time
 from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -10,6 +13,10 @@ app = FastAPI(title="GLiNER2 Local Demo API")
 
 MODEL_ID = "fastino/gliner2-base-v1"
 extractor: Optional[GLiNER2] = None
+
+# LLM: optional, used for draft reply step
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 
 
 class AnalyzeRequest(BaseModel):
@@ -32,6 +39,18 @@ class AnalyzeResponse(BaseModel):
     timings_ms: Dict[str, float]
 
 
+class DraftRequest(BaseModel):
+    text: str = Field(min_length=1, description="Original ticket text")
+    triage: Dict[str, Any] = Field(description="Full triage output from /analyze")
+
+
+class DraftResponse(BaseModel):
+    draft: str
+    tokens_in: int
+    tokens_out: int
+    latency_ms: float
+
+
 @app.on_event("startup")
 def _load_model() -> None:
     global extractor
@@ -42,6 +61,47 @@ def _load_model() -> None:
 @app.get("/health")
 def health() -> Dict[str, str]:
     return {"status": "ok", "model": MODEL_ID}
+
+
+def _call_llm_draft(ticket: str, triage: Dict[str, Any]) -> tuple[str, int, int, float]:
+    """Call OpenAI to generate a short draft reply. Returns (draft, tokens_in, tokens_out, latency_ms)."""
+    if not OPENAI_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="OPENAI_API_KEY not set; cannot generate draft reply.",
+        )
+    from openai import OpenAI
+    client = OpenAI(api_key=OPENAI_API_KEY)
+    routing = triage.get("routing") or {}
+    ticket_fields = triage.get("ticket_fields") or {}
+    severity = triage.get("severity") or {}
+    intent = triage.get("intent") or {}
+    prompt = f"""You are a support agent. Using the triage below and the customer ticket, write a short professional draft reply (2-4 sentences). Be empathetic and action-oriented.
+
+Triage:
+- Route: {routing.get('next_queue', 'N/A')}, Priority: {routing.get('priority', 'N/A')}
+- Severity: {severity}
+- Intent: {intent}
+- Extracted fields: {json.dumps(ticket_fields, default=str)}
+
+Customer ticket:
+---
+{ticket}
+---
+
+Draft reply:"""
+    t0 = time.perf_counter()
+    resp = client.chat.completions.create(
+        model=OPENAI_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    t1 = time.perf_counter()
+    choice = resp.choices[0] if resp.choices else None
+    draft = (choice.message.content or "").strip() if choice else ""
+    usage = resp.usage
+    tokens_in = (usage.prompt_tokens or 0) if usage else 0
+    tokens_out = (usage.completion_tokens or 0) if usage else 0
+    return draft, tokens_in, tokens_out, (t1 - t0) * 1000.0
 
 
 def _route(severity: str, intent: str) -> Dict[str, Any]:
@@ -64,10 +124,19 @@ def _route(severity: str, intent: str) -> Dict[str, Any]:
     return {"next_queue": queue, "priority": priority}
 
 
+@app.post("/draft", response_model=DraftResponse)
+def draft(req: DraftRequest) -> DraftResponse:
+    draft_text, tokens_in, tokens_out, latency_ms = _call_llm_draft(req.text.strip(), req.triage)
+    return DraftResponse(
+        draft=draft_text,
+        tokens_in=tokens_in,
+        tokens_out=tokens_out,
+        latency_ms=latency_ms,
+    )
+
+
 @app.post("/analyze", response_model=AnalyzeResponse)
 def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
-    import time
-
     global extractor
     if extractor is None:
         raise HTTPException(status_code=500, detail="Model not loaded")

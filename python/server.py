@@ -3,9 +3,16 @@ from __future__ import annotations
 import json
 import os
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+
+from dotenv import load_dotenv
+
+# Load .env from project root (parent of python/) so OPENAI_API_KEY is set when running via npm run dev
+_load_env = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(_load_env)
 
 from gliner2 import GLiNER2
 
@@ -14,7 +21,7 @@ app = FastAPI(title="GLiNER2 Local Demo API")
 MODEL_ID = "fastino/gliner2-base-v1"
 extractor: Optional[GLiNER2] = None
 
-# LLM: optional, used for draft reply step
+# LLM: optional, used for draft reply step (set in .env or environment)
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 

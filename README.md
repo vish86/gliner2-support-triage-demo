@@ -1,39 +1,55 @@
 # GLiNER2 Support Triage Demo (Local)
 
-Schema-first extraction + classification + structured JSON for support ticket routing.
-
-## Why this demo
-- Deterministic, structured output and real repeatable use case
-- Works locally (privacy / no API dependency)
-- Great for entity extraction + routing tasks
+Schema-first extraction + classification + structured JSON for support ticket routing. Hybrid mode: GLiNER2 for triage + optional LLM draft reply.
 
 ## Prereqs
-- Node 18+
-- Python 3.10+
 
-## Setup
+- **Node 18+**
+- **Python 3.10+**
 
-### 1) Install JS deps
+## Run locally (exact steps)
+
+Do this once, then use the last step whenever you want to run the app.
+
+### 1. Install Node dependencies
+
+From the **project root** (where `package.json` is):
+
 ```bash
 npm install
 ```
 
-### 2) Setup Python env
+### 2. Create and install Python env
+
+From the **project root**:
+
 ```bash
 cd python
-python -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cd ..
 ```
 
-### 3) Run everything (Next.js + Python API)
-```bash
-npm run dev
-```
+### 3. Start the app
 
-- Next.js: http://localhost:3000
-- Python API: http://127.0.0.1:8000/health
+From the **project root**, start both the Next.js app and the Python API (use a terminal where you activated the Python venv in step 2):
+
+**Mac/Linux:** `source python/.venv/bin/activate` then `npm run dev`  
+**Windows:** `python\.venv\Scripts\activate` then `npm run dev`
+
+Use **`npm run dev`** (not `npm dev run`). Then open **http://localhost:3000** in your browser.
+
+You should see the triage form, **Output** panel, and after clicking **Analyze**, a **Draft reply (LLM)** section. If you only see the old UI, do a hard refresh (e.g. Cmd+Shift+R / Ctrl+Shift+R) or clear cache.
+
+### 4. (Optional) Draft reply with LLM
+
+To use **Draft reply**, set your OpenAI API key in the same terminal before starting:
+
+**Mac/Linux:** `export OPENAI_API_KEY=sk-your-key-here`  
+**Windows:** `set OPENAI_API_KEY=sk-your-key-here`
+
+Then run `npm run dev` as in step 3. Without the key, **Analyze** and triage work; **Draft reply** will show an error.
 
 ## Hybrid: Draft reply (LLM)
 
@@ -43,6 +59,12 @@ After triage, use **Draft reply** to generate a short agent reply via an LLM (Op
 - Without the key, triage still works; the draft button returns a 503 with a clear message.
 - **Memory**: The backend keeps the last 20 triage results. When you request a draft, it may include one similar past ticket (same route) in the LLM context for consistency.
 - **Metrics**: The UI shows GLiNER latency, LLM tokens and latency, and an estimated cost comparison (hybrid vs all-LLM per 1k tickets).
+
+## Troubleshooting
+
+- **Seeing the old UI (no Draft reply section)?** Hard refresh the page (Cmd+Shift+R or Ctrl+Shift+R). If it still looks old, stop the dev server, delete the Next.js cache and restart: `rm -rf .next` (Mac/Linux) or `rmdir /s /q .next` (Windows), then `npm run dev`.
+- **Analyze works but Draft reply fails?** Set `OPENAI_API_KEY` in the environment (see step 4 above).
+- **Python server won’t start?** Ensure you created the venv and installed deps (step 2). If you’re on Windows, run `python\.venv\Scripts\activate` then `npm run dev` from the project root.
 
 ## Notes
 - First run will download the model weights (Hugging Face).

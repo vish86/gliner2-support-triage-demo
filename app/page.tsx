@@ -240,8 +240,17 @@ export default function Page() {
               <pre className="draft-pre">{draftResult.draft}</pre>
               <div className="metrics-box">
                 <p className="small" style={{ marginBottom: 4 }}>
-                  Draft: {draftResult.tokens_in} in / {draftResult.tokens_out} out tokens, {draftResult.latency_ms.toFixed(0)} ms
+                  <strong>This request:</strong> {draftResult.tokens_in} in / {draftResult.tokens_out} out tokens, {draftResult.latency_ms.toFixed(0)} ms
                 </p>
+                {(() => {
+                  const estAllLlmIn = Math.ceil(text.length / 4) * 2.5;
+                  const estAllLlmOut = 150;
+                  return (
+                    <p className="small" style={{ marginBottom: 4 }}>
+                      <strong>If LLM-only</strong> (no GLiNER triage): ~{Math.round(estAllLlmIn)} in / ~{estAllLlmOut} out tokens (est.)
+                    </p>
+                  );
+                })()}
                 {out?.timings_ms && (
                   <p className="small" style={{ marginBottom: 6 }}>
                     Triage: {out.timings_ms.total.toFixed(0)} ms

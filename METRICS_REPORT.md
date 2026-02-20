@@ -27,13 +27,13 @@ Generated from golden ticket tests (45 tickets, 15 per category).
 
 | Metric | Mean (ms) | p50 (ms) | p95 (ms) | Max (ms) |
 |--------|-----------|----------|----------|----------|
-| entities | 58 | 55 | 73 | 103 |
-| severity | 49 | 47 | 58 | 78 |
-| intent | 53 | 48 | 83 | 126 |
-| extract_json | 85 | 81 | 102 | 264 |
-| total | 245 | 229 | 306 | 451 |
+| entities | 58 | 57 | 63 | 77 |
+| severity | 48 | 48 | 52 | 57 |
+| intent | 48 | 47 | 55 | 59 |
+| extract_json | 81 | 82 | 88 | 98 |
+| total | 234 | 232 | 258 | 289 |
 
-**Average total triage time:** 245 ms per ticket.
+**Average total triage time:** 234 ms per ticket.
 
 
 ---

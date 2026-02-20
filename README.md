@@ -1,98 +1,68 @@
-# GLiNER2 Support Triage Demo (Local)
+# Support Triage (GLiNER2 + LLM)
 
-Schema-first extraction + classification + structured JSON for support ticket routing. Hybrid mode: GLiNER2 for triage + optional LLM draft reply.
+Hybrid support triage: **GLiNER2** for extraction, classification, and routing; **LLM** for optional draft reply. Schema-first, deterministic triage; minimal web UI.
 
-## Prereqs
+**Prereqs:** Node 18+, Python 3.10+
 
-- **Node 18+**
-- **Python 3.10+**
+---
 
-## Run locally (exact steps)
+## Run the app
 
-Do this once, then use the last step whenever you want to run the app.
-
-### 1. Install Node dependencies
-
-From the **project root** (where `package.json` is):
+From project root:
 
 ```bash
-npm install
+make setup_py    # once: create venv + install deps
+./run.sh        # start Next.js + Python API
 ```
 
-### 2. Create and install Python env
+Open **http://localhost:3000**. Paste a ticket → **Analyze** → optional **Draft reply**.
 
-From the **project root**:
+**Draft reply (optional):** Set `OPENAI_API_KEY` in the environment before `./run.sh`. Without it, triage works; draft returns a clear error. Default model: `gpt-4o-mini`.
 
-```bash
-cd python
-python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cd ..
-```
+---
 
-### 3. Start the app
+## Run tests
 
-From the **project root**, start both the Next.js app and the Python API (use a terminal where you activated the Python venv in step 2):
-
-**Mac/Linux (one command from project root):**
-```bash
-./run.sh
-```
-Or: `source python/.venv/bin/activate` then `npm run dev`.
-
-**Windows:** `python\.venv\Scripts\activate` then `npm run dev`.
-
-Then open **http://localhost:3000** in your browser.
-
-You should see the triage form, **Output** panel, and after clicking **Analyze**, a **Draft reply (LLM)** section. If you only see the old UI, do a hard refresh (e.g. Cmd+Shift+R / Ctrl+Shift+R) or clear cache.
-
-### 4. (Optional) Draft reply with LLM
-
-To use **Draft reply**, set your OpenAI API key in the same terminal before starting:
-
-**Mac/Linux:** `export OPENAI_API_KEY=sk-your-key-here`  
-**Windows:** `set OPENAI_API_KEY=sk-your-key-here`
-
-Then run `npm run dev` as in step 3. Without the key, **Analyze** and triage work; **Draft reply** will show an error.
-
-## Hybrid: Draft reply (LLM)
-
-After triage, use **Draft reply** to generate a short agent reply via an LLM (OpenAI). Triage is done by GLiNER2 (local); only the draft step calls the API.
-
-- Set `OPENAI_API_KEY` in the environment when running the Python server. The default model is **`gpt-4o-mini`** (OpenAI’s cheapest standard API model). Override with `OPENAI_MODEL` if needed.
-- Without the key, triage still works; the draft button returns a 503 with a clear message.
-- **Memory**: The backend keeps the last 20 triage results. When you request a draft, it may include one similar past ticket (same route) in the LLM context for consistency.
-- **Metrics**: The UI shows GLiNER latency, LLM tokens and latency, and an estimated cost comparison (hybrid vs all-LLM per 1k tickets).
-
-## Troubleshooting
-
-- **Seeing the old UI (no Draft reply section)?** Hard refresh the page (Cmd+Shift+R or Ctrl+Shift+R). If it still looks old, stop the dev server, delete the Next.js cache and restart: `rm -rf .next` (Mac/Linux) or `rmdir /s /q .next` (Windows), then `npm run dev`.
-- **Analyze works but Draft reply fails?** Set `OPENAI_API_KEY` in the environment (see step 4 above).
-- **Python server won’t start?** Ensure you created the venv and installed deps (step 2). If you’re on Windows, run `python\.venv\Scripts\activate` then `npm run dev` from the project root.
-
-## Tests and metrics report
-
-Golden ticket tests (45 tickets, 15 per category; multiple entity thresholds) plus a generated metrics report.
-
-**From project root** (creates venv and installs deps if needed):
+From project root (installs pytest if needed; first run loads the model, ~1–2 min):
 
 ```bash
 make test
+```
+
+Runs 45 golden tickets across 4 entity thresholds (correctness, stability, latency).
+
+---
+
+## View metrics report
+
+After tests have run:
+
+```bash
 make report
 ```
 
-Or manually:
+Generates **METRICS_REPORT.md** (routing accuracy, output stability, latency table, cost comparison). Open the file in the repo root.
 
-```bash
-source python/.venv/bin/activate   # or: python3 -m venv python/.venv && source python/.venv/bin/activate
-pip install -r python/requirements.txt
-python -m pytest python/tests/test_triage.py -v
-python python/scripts/generate_metrics_report.py
-```
+---
 
-Use `python` from the venv (or `python3`) so the report script runs. This writes **METRICS_REPORT.md** with routing accuracy per threshold, output stability (determinism), latency (mean/p95), and cost comparison (hybrid vs LLM-only).
+## Read the design
+
+**[DESIGN.md](DESIGN.md)** — Architecture, why hybrid (GLiNER2 vs LLM), routing, memory, trade-offs, and how to walk through the system.
+
+---
+
+## Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| Old UI / no Draft section | Hard refresh (Cmd+Shift+R). If needed: `rm -rf .next` then `./run.sh` |
+| Draft fails | Set `OPENAI_API_KEY` before starting |
+| Python/server won’t start | Run `make setup_py` then `./run.sh` from project root |
+| `make` not found | Use manual steps: `source python/.venv/bin/activate`, `pip install -r python/requirements.txt`, `npm install`, then `npm run dev` |
+
+---
 
 ## Notes
-- First run will download the model weights (Hugging Face).
-- If you want stricter entity extraction, increase threshold (e.g., 0.75+).
+
+- First run downloads GLiNER2 model weights (Hugging Face).
+- Higher entity threshold (e.g. 0.75) = fewer, more precise entities; routing uses classification only, so routing accuracy is unchanged by threshold.

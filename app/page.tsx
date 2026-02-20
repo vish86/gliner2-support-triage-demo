@@ -268,6 +268,7 @@ export default function Page() {
 
       <footer className="powered-by">
         <a href="https://fastino.ai" target="_blank" rel="noopener noreferrer">
+          <img src="/fastino-logo.png" alt="Fastino" className="fastino-logo" />
           Powered by Fastino
         </a>
       </footer>

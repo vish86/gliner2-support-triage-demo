@@ -265,6 +265,12 @@ pre {
   background: var(--bg-card);
 }
 
+.fastino-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
 .draft-pre {
   white-space: pre-wrap;
   font-family: inherit;

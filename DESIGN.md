@@ -101,7 +101,7 @@ Routing is **rule-based**, not learned:
 - Fits “production-leaning” without committing to a full microservices setup.
 
 **Why not OAuth?**  
-- Scope was to show the hybrid design, memory, and metrics; auth was deferred to keep the demo focused and runnable out of the box.
+- Deferred for demo scope. In production, would integrate with Zendesk/Intercom/ServiceNow OAuth to pull real tickets. Demo uses synthetic tickets to showcase the hybrid architecture without external dependencies.
 
 ---
 
@@ -140,6 +140,19 @@ The same backend logic runs for all presets; only the request payload (schema + 
 | Routing | Rules from severity + intent | Interpretable; no training data. |
 | Memory | In-memory, last N; used only in draft | Shows “similar ticket” context without making triage stateful. |
 | Memory not in analyze | Yes | Keeps triage deterministic and per-ticket. |
-| OAuth | Omitted | Keep demo focused on design and metrics. |
+| OAuth | Omitted | Deferred for demo; would integrate Zendesk/Intercom OAuth in production. Uses synthetic tickets to show architecture. |
 | Persistence | None for memory | Keeps runnable without DB; easy to add later. |
+
+---
+
+## 9. Production Considerations
+
+**Immediate next steps:**
+- OAuth integration with ticketing system (Zendesk / ServiceNow / Intercom / etc.)
+- Persistent memory (Redis / PostgreSQL) instead of in-memory
+- Monitoring & alerting on triage latency and routing accuracy
+
+**Scalability:**
+- Queue for async draft generation
+- Caching layer for similar ticket lookups
 

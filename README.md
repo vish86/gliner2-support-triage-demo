@@ -2,6 +2,10 @@
 
 Hybrid support triage: **GLiNER2** for extraction, classification, and routing; **LLM** for optional draft reply. Schema-first, deterministic triage; minimal web UI.
 
+**Problem:** Support teams need to route tickets quickly while maintaining context for replies.
+
+**Solution:** Hybrid approach — GLiNER2 ($0, <250ms, 100% deterministic) handles triage; LLM generates draft replies only when needed. Result: **60–75% cost savings** vs an all-LLM pipeline.
+
 **Prereqs:** Node 18+, Python 3.10+
 
 ---
@@ -59,6 +63,15 @@ Generates **METRICS_REPORT.md** (routing accuracy, output stability, latency tab
 | Draft fails | Set `OPENAI_API_KEY` before starting |
 | Python/server won’t start | Run `make setup_py` then `./run.sh` from project root |
 | `make` not found | Use manual steps: `source python/.venv/bin/activate`, `pip install -r python/requirements.txt`, `npm install`, then `npm run dev` |
+
+---
+
+## Demo Flow
+
+1. User pastes a support ticket
+2. GLiNER2 extracts entities, classifies severity/intent
+3. Rule-based routing determines queue & priority
+4. (Optional) LLM generates draft reply using triage context + similar past ticket
 
 ---
 

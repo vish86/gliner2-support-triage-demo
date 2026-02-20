@@ -30,10 +30,10 @@ dev: setup
 	@npm run dev
 
 test: setup_py
-	@cd $(PY_DIR) && $(PY) -m pytest tests/test_triage.py -v
+	@$(PY) -m pytest $(PY_DIR)/tests/test_triage.py -v
 
 report: test
-	@$(PY) python/scripts/generate_metrics_report.py
+	@$(PY) $(PY_DIR)/scripts/generate_metrics_report.py
 
 clean:
 	rm -rf node_modules .next

@@ -16,7 +16,7 @@ _server_dir = Path(__file__).resolve().parent.parent
 if str(_server_dir) not in sys.path:
     sys.path.insert(0, str(_server_dir))
 
-from server import app
+from server import app, _load_model
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 GOLDEN_TICKETS_PATH = FIXTURES_DIR / "golden_tickets.json"
@@ -24,6 +24,8 @@ GOLDEN_TICKETS_PATH = FIXTURES_DIR / "golden_tickets.json"
 
 @pytest.fixture(scope="session")
 def client():
+    # Load the GLiNER2 model before any request; TestClient may not run startup in time
+    _load_model()
     return TestClient(app)
 
 

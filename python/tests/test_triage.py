@@ -26,19 +26,7 @@ STABILITY_RUNS = 10
 STABILITY_TICKET_INDEXES = [0, 5, 10, 20, 30]  # subset of golden tickets for stability
 
 
-@pytest.fixture(scope="module")
-def client():
-    from fastapi.testclient import TestClient
-    from server import app
-    return TestClient(app)
-
-
-@pytest.fixture(scope="module")
-def golden_tickets():
-    path = Path(__file__).resolve().parent / "fixtures" / "golden_tickets.json"
-    with open(path) as f:
-        return json.load(f)
-
+# client and golden_tickets fixtures come from conftest.py (conftest loads model before client)
 
 def test_correctness_per_threshold(client, golden_tickets):
     """Routing accuracy: for each threshold, run all golden tickets and compare next_queue + priority."""

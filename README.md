@@ -75,20 +75,23 @@ After triage, use **Draft reply** to generate a short agent reply via an LLM (Op
 
 Golden ticket tests (45 tickets, 15 per category; multiple entity thresholds) plus a generated metrics report.
 
-**Run tests** (from project root; requires venv with deps and GLiNER2 model):
+**From project root** (creates venv and installs deps if needed):
 
 ```bash
-source python/.venv/bin/activate
-cd python && pytest tests/test_triage.py -v && cd ..
+make test
+make report
 ```
 
-**Generate metrics report** (after tests have run):
+Or manually:
 
 ```bash
+source python/.venv/bin/activate   # or: python3 -m venv python/.venv && source python/.venv/bin/activate
+pip install -r python/requirements.txt
+python -m pytest python/tests/test_triage.py -v
 python python/scripts/generate_metrics_report.py
 ```
 
-This writes **METRICS_REPORT.md** with routing accuracy per threshold, output stability (determinism), latency (mean/p95), and cost comparison (hybrid vs LLM-only).
+Use `python` from the venv (or `python3`) so the report script runs. This writes **METRICS_REPORT.md** with routing accuracy per threshold, output stability (determinism), latency (mean/p95), and cost comparison (hybrid vs LLM-only).
 
 ## Notes
 - First run will download the model weights (Hugging Face).

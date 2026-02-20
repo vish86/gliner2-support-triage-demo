@@ -2,16 +2,16 @@ export type PresetKey = "saas_support" | "auth_incident" | "billing";
 
 export const PRESETS: Record<PresetKey, { name: string; description: string }> = {
   saas_support: {
-    name: "SaaS Support Triage (default)",
-    description: "Extract product/integration/env + classify severity/intent + build JSON ticket fields"
+    name: "SaaS Support",
+    description: "Product, integration, environment; severity and intent; ticket fields"
   },
   auth_incident: {
-    name: "Auth / SSO Incident",
-    description: "Focus on SSO, IdP, auth errors, and incident routing"
+    name: "Auth / SSO",
+    description: "SSO, IdP, auth errors, incident routing"
   },
   billing: {
-    name: "Billing / Subscription",
-    description: "Extract plan, invoice IDs, pricing, and billing intent"
+    name: "Billing",
+    description: "Plan, invoice IDs, pricing, billing intent"
   }
 };
 

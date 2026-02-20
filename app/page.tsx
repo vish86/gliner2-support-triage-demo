@@ -31,6 +31,9 @@ export default function Page() {
     tokens_in: number;
     tokens_out: number;
     latency_ms: number;
+    context_used?: boolean;
+    context_preview?: string | null;
+    context_queue?: string | null;
   } | null>(null);
   const [draftErr, setDraftErr] = useState<string | null>(null);
 
@@ -83,10 +86,9 @@ export default function Page() {
   return (
     <div className="container">
       <div className="card" style={{ marginBottom: 16 }}>
-        <h1>GLiNER2 Support Triage Demo (Local)</h1>
+        <h1>Support Triage</h1>
         <p>
-          Paste a ticket → schema-first extraction + classification + structured JSON for routing. Runs locally via
-          <span className="badge" style={{ marginLeft: 8 }}>Python + GLiNER2</span>
+          Paste a ticket to extract entities, classify severity and intent, and get structured routing. Optionally generate a draft reply.
         </p>
 
         <div className="toolbar">
@@ -121,12 +123,12 @@ export default function Page() {
               onChange={(e) => setThreshold(parseFloat(e.target.value))}
             />
             <div className="small" style={{ marginTop: 6 }}>
-              Higher = fewer false positives. Try 0.75+ for “strict mode”.
+              Higher values reduce false positives.
             </div>
           </div>
 
           <div style={{ flex: 1 }}>
-            <label>Quick sample</label>
+            <label>Sample ticket</label>
             <select value={text} onChange={(e) => setText(e.target.value)}>
               {sampleOptions.map((s, i) => (
                 <option key={i} value={s}>
@@ -149,23 +151,17 @@ export default function Page() {
           <label>Ticket text</label>
           <textarea value={text} onChange={(e) => setText(e.target.value)} />
           {err && <p style={{ color: "#ff9aa2", marginTop: 12 }}>{err}</p>}
-          <p className="small" style={{ marginTop: 10 }}>
-            Tip for demo: run the same ticket 2–3 times to show stable JSON + routing.
-          </p>
         </div>
 
         <div className="card">
           <label>Output</label>
-          <pre>{out ? JSON.stringify(out, null, 2) : "Click Analyze to see results."}</pre>
-          <p className="small" style={{ marginTop: 10 }}>
-            You can claim “production-friendly” here because the output is schema-shaped, not free-form.
-          </p>
+          <pre>{out ? JSON.stringify(out, null, 2) : "Run Analyze to see structured output."}</pre>
         </div>
       </div>
 
       {out && (
         <div className="card" style={{ marginTop: 16 }}>
-          <label>Draft reply (LLM)</label>
+          <label>Draft reply</label>
           <button
             type="button"
             onClick={requestDraft}
@@ -178,14 +174,25 @@ export default function Page() {
           )}
           {draftResult && (
             <div style={{ marginTop: 12 }}>
+              {draftResult.context_used && (
+                <div className="memory-context-box">
+                  <strong>Memory:</strong> 1 similar ticket (same route: {draftResult.context_queue ?? "—"}) was included as context for this draft.
+                  {draftResult.context_preview && (
+                    <details style={{ marginTop: 8 }}>
+                      <summary className="small">Past ticket used</summary>
+                      <pre className="context-preview">{draftResult.context_preview}</pre>
+                    </details>
+                  )}
+                </div>
+              )}
               <pre className="draft-pre">{draftResult.draft}</pre>
               <div className="metrics-box">
                 <p className="small" style={{ marginTop: 8, marginBottom: 4 }}>
-                  LLM: {draftResult.tokens_in} in / {draftResult.tokens_out} out tokens, {draftResult.latency_ms.toFixed(0)} ms
+                  Draft: {draftResult.tokens_in} in / {draftResult.tokens_out} out tokens, {draftResult.latency_ms.toFixed(0)} ms
                 </p>
                 {out?.timings_ms && (
                   <p className="small" style={{ marginBottom: 6 }}>
-                    GLiNER: {out.timings_ms.total.toFixed(0)} ms total (local, no API cost)
+                    Triage: {out.timings_ms.total.toFixed(0)} ms
                   </p>
                 )}
                 <p className="small cost-blurb">
@@ -197,7 +204,7 @@ export default function Page() {
                     const allLlmPer1k = (estAllLlmIn * inPrice + estAllLlmOut * outPrice) * 1000;
                     const pct = allLlmPer1k > 0 ? Math.round((1 - hybridPer1k / allLlmPer1k) * 100) : 0;
                     return (
-                      <>Est. cost: ${hybridPer1k.toFixed(2)} per 1k tickets (hybrid) vs ~${allLlmPer1k.toFixed(2)} (all-LLM). Cheaper by ~{pct}%.</>
+                      <>Est. ${hybridPer1k.toFixed(2)} per 1k tickets (hybrid) vs ~${allLlmPer1k.toFixed(2)} (LLM-only), ~{pct}% savings.</>
                     );
                   })()}
                 </p>

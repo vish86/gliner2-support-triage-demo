@@ -61,6 +61,9 @@ class DraftResponse(BaseModel):
     tokens_in: int
     tokens_out: int
     latency_ms: float
+    context_used: bool = False
+    context_preview: Optional[str] = None
+    context_queue: Optional[str] = None
 
 
 @app.on_event("startup")
@@ -89,8 +92,8 @@ def _find_similar_ticket(current_ticket: str, routing: Dict[str, Any]) -> Option
     return None
 
 
-def _call_llm_draft(ticket: str, triage: Dict[str, Any]) -> tuple[str, int, int, float]:
-    """Call OpenAI to generate a short draft reply. Returns (draft, tokens_in, tokens_out, latency_ms)."""
+def _call_llm_draft(ticket: str, triage: Dict[str, Any]) -> tuple[str, int, int, float, Optional[str]]:
+    """Call OpenAI to generate a short draft reply. Returns (draft, tokens_in, tokens_out, latency_ms, similar_ticket_snippet_or_none)."""
     if not OPENAI_API_KEY:
         raise HTTPException(
             status_code=503,
@@ -132,7 +135,7 @@ Draft reply:"""
     usage = resp.usage
     tokens_in = (usage.prompt_tokens or 0) if usage else 0
     tokens_out = (usage.completion_tokens or 0) if usage else 0
-    return draft, tokens_in, tokens_out, (t1 - t0) * 1000.0
+    return draft, tokens_in, tokens_out, (t1 - t0) * 1000.0, similar_snippet
 
 
 def _route(severity: str, intent: str) -> Dict[str, Any]:
@@ -157,12 +160,16 @@ def _route(severity: str, intent: str) -> Dict[str, Any]:
 
 @app.post("/draft", response_model=DraftResponse)
 def draft(req: DraftRequest) -> DraftResponse:
-    draft_text, tokens_in, tokens_out, latency_ms = _call_llm_draft(req.text.strip(), req.triage)
+    draft_text, tokens_in, tokens_out, latency_ms, similar_snippet = _call_llm_draft(req.text.strip(), req.triage)
+    routing = (req.triage or {}).get("routing") or {}
     return DraftResponse(
         draft=draft_text,
         tokens_in=tokens_in,
         tokens_out=tokens_out,
         latency_ms=latency_ms,
+        context_used=bool(similar_snippet),
+        context_preview=(similar_snippet[:220] + "…") if similar_snippet and len(similar_snippet) > 220 else (similar_snippet or None),
+        context_queue=routing.get("next_queue") if similar_snippet else None,
     )
 
 

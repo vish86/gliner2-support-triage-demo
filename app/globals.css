@@ -124,3 +124,29 @@ pre {
   color: #94a3b8;
   font-size: 12px;
 }
+
+.memory-context-box {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #b7c6e6;
+}
+
+.memory-context-box strong {
+  color: #e6eefc;
+}
+
+.context-preview {
+  margin: 6px 0 0;
+  padding: 8px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #0b1220;
+  border-radius: 6px;
+  max-height: 120px;
+  overflow: auto;
+}

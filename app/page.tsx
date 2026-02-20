@@ -6,15 +6,27 @@ import { PRESETS, buildPayload, type PresetKey } from "@/lib/schemas";
 const SAMPLES: Record<PresetKey, string[]> = {
   saas_support: [
     "Hi team — we're seeing ERROR_CODE=KAFKA_403 when trying to publish events from our AWS us-west-2 cluster. This started after we enabled PrivateLink yesterday. Prod only. Can you help? We're Enterprise tier.",
-    "Our Snowflake sink integration is failing with 401s. We rotated credentials in Okta and now the connector can't authenticate. Happens in staging and prod. Please advise."
+    "Our Snowflake sink integration is failing with 401s. We rotated credentials in Okta and now the connector can't authenticate. Happens in staging and prod. Please advise.",
+    "Production outage: API returning 503 for all requests in eu-west-1. Started 10 minutes ago. Need immediate help.",
+    "Critical: All users in prod are seeing 500s on login. This is a complete outage. Sev0.",
+    "The BigQuery sync job is failing with permission denied. We're on Team plan. Azure tenant.",
+    "Can we get a price quote for upgrading from Team to Enterprise? We need SSO and custom SLAs."
   ],
   auth_incident: [
     "SSO login is broken for multiple users. Okta shows successful auth but your app returns 500. This is impacting all users in prod (us-east-1). Please treat as urgent.",
-    "Need access request: add john.doe@acme.com to Admin role. We're using AzureAD SSO. Also seeing intermittent 'invalid_saml_response' errors."
+    "Need access request: add john.doe@acme.com to Admin role. We're using AzureAD SSO. Also seeing intermittent 'invalid_saml_response' errors.",
+    "Critical incident: All SSO logins failing with 500. Okta side shows success. Entire org blocked. Sev0.",
+    "After upgrading Okta we get 'SAML assertion expired' errors. Affecting 20% of users. Prod.",
+    "How do we configure JIT provisioning for Azure AD? We need automatic role mapping.",
+    "Sev1: Okta SCIM sync is failing. New users are not being provisioned. Blocking onboarding."
   ],
   billing: [
     "We were billed twice for Invoice INV-19383 ($4,500 USD) for the Pro plan. Can you refund the duplicate charge?",
-    "We want to cancel at the end of the term. What's the pricing to downgrade from Enterprise to Team? Also please confirm the renewal date."
+    "We want to cancel at the end of the term. What's the pricing to downgrade from Enterprise to Team? Also please confirm the renewal date.",
+    "Need a quote for 500 seats on Enterprise with annual commitment. We're currently on Pro.",
+    "Refund request: duplicate charge of $2,400 on 2024-01-15. Card ending 4242. Reference INV-7744.",
+    "Invoice INV-1001 missing from our records. We need it for accounting. Company: Beta Corp. Plan: Pro.",
+    "Do you offer education or nonprofit discounts? We're a university with 1000 users."
   ]
 };
 
@@ -113,9 +125,9 @@ export default function Page() {
 
   return (
     <div className="container">
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
-          <h1 style={{ margin: 0 }}>Support Triage</h1>
+      <div className="card">
+        <header className="page-header">
+          <h1>Support Triage</h1>
           <div className="mode-toggle">
             <button
               type="button"
@@ -132,7 +144,7 @@ export default function Page() {
               Agent
             </button>
           </div>
-        </div>
+        </header>
         <p>
           {mode === "manual"
             ? "Paste a ticket to extract entities, classify severity and intent, and get structured routing. Optionally generate a draft reply."
@@ -140,7 +152,7 @@ export default function Page() {
         </p>
 
         <div className="toolbar">
-          <div style={{ minWidth: 280 }}>
+          <div className="toolbar-item">
             <label>Preset</label>
             <select
               value={preset}
@@ -157,11 +169,9 @@ export default function Page() {
                 </option>
               ))}
             </select>
-            <div className="small" style={{ marginTop: 6 }}>{PRESETS[preset].description}</div>
           </div>
-
-          <div style={{ minWidth: 220 }}>
-            <label>Entity threshold (precision vs recall)</label>
+          <div className="toolbar-item">
+            <label>Threshold</label>
             <input
               type="number"
               step="0.05"
@@ -170,13 +180,9 @@ export default function Page() {
               value={threshold}
               onChange={(e) => setThreshold(parseFloat(e.target.value))}
             />
-            <div className="small" style={{ marginTop: 6 }}>
-              Higher values reduce false positives.
-            </div>
           </div>
-
-          <div style={{ flex: 1 }}>
-            <label>Sample ticket</label>
+          <div className="toolbar-item">
+            <label>Sample</label>
             <select value={text} onChange={(e) => setText(e.target.value)}>
               {sampleOptions.map((s, i) => (
                 <option key={i} value={s}>
@@ -185,10 +191,9 @@ export default function Page() {
               ))}
             </select>
           </div>
-
-          <div style={{ alignSelf: "end" }}>
+          <div className="toolbar-action">
             <button onClick={analyze} disabled={loading || !text.trim()}>
-              {loading ? "Analyzing..." : draftLoading ? "Analyzing + drafting…" : mode === "agent" ? "Run (analyze + auto-draft if P0/P1)" : "Analyze"}
+              {loading || draftLoading ? "Running…" : mode === "agent" ? "Run" : "Analyze"}
             </button>
           </div>
         </div>
@@ -198,9 +203,8 @@ export default function Page() {
         <div className="card">
           <label>Ticket text</label>
           <textarea value={text} onChange={(e) => setText(e.target.value)} />
-          {err && <p style={{ color: "#ff9aa2", marginTop: 12 }}>{err}</p>}
+          {err && <p className="err-msg">{err}</p>}
         </div>
-
         <div className="card">
           <label>Output</label>
           <pre>{out ? JSON.stringify(out, null, 2) : "Run Analyze to see structured output."}</pre>
@@ -208,20 +212,20 @@ export default function Page() {
       </div>
 
       {out && (
-        <div className="card" style={{ marginTop: 16 }}>
+        <div className="card draft-card">
           <label>Draft reply</label>
-          <button
-            type="button"
-            onClick={requestDraft}
-            disabled={draftLoading}
-          >
-            {draftLoading ? "Generating draft…" : "Draft reply"}
-          </button>
-          {draftErr && (
-            <p style={{ color: "#ff9aa2", marginTop: 10 }}>{draftErr}</p>
-          )}
+          <div className="card-actions">
+            <button
+              type="button"
+              onClick={requestDraft}
+              disabled={draftLoading}
+            >
+              {draftLoading ? "Generating draft…" : "Draft reply"}
+            </button>
+          </div>
+          {draftErr && <p className="err-msg">{draftErr}</p>}
           {draftResult && (
-            <div style={{ marginTop: 12 }}>
+            <div className="draft-content">
               {draftResult.context_used && (
                 <div className="memory-context-box">
                   <strong>Memory:</strong> 1 similar ticket (same route: {draftResult.context_queue ?? "—"}) was included as context for this draft.
@@ -235,7 +239,7 @@ export default function Page() {
               )}
               <pre className="draft-pre">{draftResult.draft}</pre>
               <div className="metrics-box">
-                <p className="small" style={{ marginTop: 8, marginBottom: 4 }}>
+                <p className="small" style={{ marginBottom: 4 }}>
                   Draft: {draftResult.tokens_in} in / {draftResult.tokens_out} out tokens, {draftResult.latency_ms.toFixed(0)} ms
                 </p>
                 {out?.timings_ms && (

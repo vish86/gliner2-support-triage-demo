@@ -35,10 +35,15 @@ cd ..
 
 From the **project root**, start both the Next.js app and the Python API (use a terminal where you activated the Python venv in step 2):
 
-**Mac/Linux:** `source python/.venv/bin/activate` then `npm run dev`  
-**Windows:** `python\.venv\Scripts\activate` then `npm run dev`
+**Mac/Linux (one command from project root):**
+```bash
+./run.sh
+```
+Or: `source python/.venv/bin/activate` then `npm run dev`.
 
-Use **`npm run dev`** (not `npm dev run`). Then open **http://localhost:3000** in your browser.
+**Windows:** `python\.venv\Scripts\activate` then `npm run dev`.
+
+Then open **http://localhost:3000** in your browser.
 
 You should see the triage form, **Output** panel, and after clicking **Analyze**, a **Draft reply (LLM)** section. If you only see the old UI, do a hard refresh (e.g. Cmd+Shift+R / Ctrl+Shift+R) or clear cache.
 
@@ -55,7 +60,7 @@ Then run `npm run dev` as in step 3. Without the key, **Analyze** and triage wor
 
 After triage, use **Draft reply** to generate a short agent reply via an LLM (OpenAI). Triage is done by GLiNER2 (local); only the draft step calls the API.
 
-- Set `OPENAI_API_KEY` in the environment when running the Python server. Optional: `OPENAI_MODEL` (default: `gpt-4o-mini`).
+- Set `OPENAI_API_KEY` in the environment when running the Python server. The default model is **`gpt-4o-mini`** (OpenAI’s cheapest standard API model). Override with `OPENAI_MODEL` if needed.
 - Without the key, triage still works; the draft button returns a 503 with a clear message.
 - **Memory**: The backend keeps the last 20 triage results. When you request a draft, it may include one similar past ticket (same route) in the LLM context for consistency.
 - **Metrics**: The UI shows GLiNER latency, LLM tokens and latency, and an estimated cost comparison (hybrid vs all-LLM per 1k tickets).

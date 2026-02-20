@@ -145,7 +145,7 @@ def _route(severity: str, intent: str) -> Dict[str, Any]:
     if sev in ["sev0", "sev1"] or "incident" in it:
         queue = "oncall_incidents"
         priority = "P0" if sev == "sev0" else "P1"
-    elif "billing" in it or "refund" in it or "invoice" in it or "pricing" in it:
+    elif "billing" in it or "refund" in it or "invoice" in it or "pricing" in it or "cancel" in it:
         queue = "billing_ops"
         priority = "P2"
     elif "access" in it or "sso" in it or "login" in it:

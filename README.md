@@ -71,6 +71,25 @@ After triage, use **Draft reply** to generate a short agent reply via an LLM (Op
 - **Analyze works but Draft reply fails?** Set `OPENAI_API_KEY` in the environment (see step 4 above).
 - **Python server won’t start?** Ensure you created the venv and installed deps (step 2). If you’re on Windows, run `python\.venv\Scripts\activate` then `npm run dev` from the project root.
 
+## Tests and metrics report
+
+Golden ticket tests (45 tickets, 15 per category; multiple entity thresholds) plus a generated metrics report.
+
+**Run tests** (from project root; requires venv with deps and GLiNER2 model):
+
+```bash
+source python/.venv/bin/activate
+cd python && pytest tests/test_triage.py -v && cd ..
+```
+
+**Generate metrics report** (after tests have run):
+
+```bash
+python python/scripts/generate_metrics_report.py
+```
+
+This writes **METRICS_REPORT.md** with routing accuracy per threshold, output stability (determinism), latency (mean/p95), and cost comparison (hybrid vs LLM-only).
+
 ## Notes
 - First run will download the model weights (Hugging Face).
 - If you want stricter entity extraction, increase threshold (e.g., 0.75+).

@@ -5,12 +5,14 @@ VENV := $(PY_DIR)/.venv
 PY := $(VENV)/bin/python
 PIP := $(VENV)/bin/pip
 
-.PHONY: help setup setup_py setup_node dev clean
+.PHONY: help setup setup_py setup_node dev clean test report
 
 help:
 	@echo "Targets:"
 	@echo "  make dev     # install deps (if needed) and run Next.js + Python API"
-	@echo "  make clean   # remove node_modules, .next, and python venv"
+	@echo "  make test   # run triage tests (45 golden tickets, multiple thresholds)"
+	@echo "  make report # generate METRICS_REPORT.md (run after make test)"
+	@echo "  make clean  # remove node_modules, .next, and python venv"
 
 setup: setup_node setup_py
 
@@ -26,6 +28,12 @@ setup_py:
 
 dev: setup
 	@npm run dev
+
+test: setup_py
+	@cd $(PY_DIR) && $(PY) -m pytest tests/test_triage.py -v
+
+report: test
+	@$(PY) python/scripts/generate_metrics_report.py
 
 clean:
 	rm -rf node_modules .next

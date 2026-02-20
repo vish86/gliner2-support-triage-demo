@@ -18,7 +18,15 @@ const SAMPLES: Record<PresetKey, string[]> = {
   ]
 };
 
+type Mode = "manual" | "agent";
+
+function shouldAutoDraft(routing: { priority?: string } | null): boolean {
+  const p = (routing?.priority || "").toUpperCase();
+  return p === "P0" || p === "P1";
+}
+
 export default function Page() {
+  const [mode, setMode] = useState<Mode>("manual");
   const [preset, setPreset] = useState<PresetKey>("saas_support");
   const [threshold, setThreshold] = useState(0.6);
   const [text, setText] = useState(SAMPLES.saas_support[0]);
@@ -43,6 +51,8 @@ export default function Page() {
     setLoading(true);
     setErr(null);
     setOut(null);
+    setDraftResult(null);
+    setDraftErr(null);
 
     try {
       const payload = buildPayload(preset, text, threshold);
@@ -55,6 +65,24 @@ export default function Page() {
       const data = await resp.json();
       if (!resp.ok) throw new Error(data?.detail || "Request failed");
       setOut(data);
+
+      if (mode === "agent" && shouldAutoDraft(data?.routing)) {
+        setDraftLoading(true);
+        try {
+          const draftResp = await fetch("/api/draft", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ text: text.trim(), triage: data }),
+          });
+          const draftData = await draftResp.json();
+          if (!draftResp.ok) throw new Error(draftData?.detail || "Draft request failed");
+          setDraftResult(draftData);
+        } catch (e: any) {
+          setDraftErr(e?.message || "Unknown error");
+        } finally {
+          setDraftLoading(false);
+        }
+      }
     } catch (e: any) {
       setErr(e?.message || "Unknown error");
     } finally {
@@ -86,9 +114,29 @@ export default function Page() {
   return (
     <div className="container">
       <div className="card" style={{ marginBottom: 16 }}>
-        <h1>Support Triage</h1>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
+          <h1 style={{ margin: 0 }}>Support Triage</h1>
+          <div className="mode-toggle">
+            <button
+              type="button"
+              className={mode === "manual" ? "mode-active" : ""}
+              onClick={() => { setMode("manual"); setDraftResult(null); setDraftErr(null); }}
+            >
+              Manual
+            </button>
+            <button
+              type="button"
+              className={mode === "agent" ? "mode-active" : ""}
+              onClick={() => { setMode("agent"); setDraftResult(null); setDraftErr(null); }}
+            >
+              Agent
+            </button>
+          </div>
+        </div>
         <p>
-          Paste a ticket to extract entities, classify severity and intent, and get structured routing. Optionally generate a draft reply.
+          {mode === "manual"
+            ? "Paste a ticket to extract entities, classify severity and intent, and get structured routing. Optionally generate a draft reply."
+            : "Agent mode: Analyze runs first, then draft is auto-generated for P0/P1 (high severity) tickets."}
         </p>
 
         <div className="toolbar">
@@ -140,7 +188,7 @@ export default function Page() {
 
           <div style={{ alignSelf: "end" }}>
             <button onClick={analyze} disabled={loading || !text.trim()}>
-              {loading ? "Analyzing..." : "Analyze"}
+              {loading ? "Analyzing..." : draftLoading ? "Analyzing + drafting…" : mode === "agent" ? "Run (analyze + auto-draft if P0/P1)" : "Analyze"}
             </button>
           </div>
         </div>

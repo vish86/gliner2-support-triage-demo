@@ -150,3 +150,32 @@ pre {
   max-height: 120px;
   overflow: auto;
 }
+
+.mode-toggle {
+  display: inline-flex;
+  border-radius: 10px;
+  border: 1px solid #23304a;
+  overflow: hidden;
+  background: #0b1220;
+}
+.mode-toggle button {
+  padding: 8px 16px;
+  font-size: 13px;
+  background: transparent;
+  color: #b7c6e6;
+  border: none;
+  cursor: pointer;
+  margin: 0;
+}
+.mode-toggle button:hover {
+  color: #e6eefc;
+  background: #111827;
+}
+.mode-toggle button.mode-active {
+  background: #2d6cdf;
+  color: white;
+}
+.mode-toggle button.mode-active:hover {
+  background: #3b7cf0;
+  color: white;
+}

@@ -22,6 +22,7 @@ MODEL_ID = "fastino/gliner2-base-v1"
 extractor: Optional[GLiNER2] = None
 
 # LLM: optional, used for draft reply step (set in .env or environment)
+# gpt-4o-mini is OpenAI's cheapest standard model; override with OPENAI_MODEL if needed
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 

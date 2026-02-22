@@ -148,7 +148,7 @@ def _route(severity: str, intent: str) -> Dict[str, Any]:
     elif "billing" in it or "refund" in it or "invoice" in it or "pricing" in it or "cancel" in it:
         queue = "billing_ops"
         priority = "P2"
-    elif "access" in it or "sso" in it or "login" in it:
+    elif "access" in it or "sso" in it or "login" in it or "okta" in it:
         queue = "identity_access"
         priority = "P2"
     else:
